@@ -70,23 +70,71 @@ app.post('/todos', jwtMiddleware, (req, res) => {
     })
 })
 
-app.patch('/todos/:id', jwtMiddleware, (req, res) => {
+class NotFoundError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'NotFoundError'
+  }
+}
+
+class ForbiddenError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'ForbiddenError'
+  }
+}
+
+const authorizeTodo = user_id => todo => {
+  if (!todo) {
+    throw new NotFoundError('경로를 찾을 수 없습니다')
+  } else if (todo.user_id !== user_id) {
+    throw new ForbiddenError('허가되지 않은 접근입니다.')
+  } else {
+    return
+  }
+}
+
+app.patch('/todos/:id', jwtMiddleware, (req, res, next) => {
   const id = req.params.id
   const title = req.body.title
   const complete = req.body.complete
-  query.updateTodoById(id, {title, complete})
-    .then(id => {
-      return query.getTodoById(id)
+  const user_id = req.user.id
+  query.getTodoById(id)
+    .then(authorizeTodo(user_id))
+    .then(() => {
+      query.updateTodoById(id, {title, complete})
+        .then(id => query.getTodoById(id))
+        .then(todo => {
+          res.send(todo)
+        })
     })
-    .then(todo => {
-      res.send(todo)
+    .catch(next)
+})
+
+app.delete('/todos/:id', jwtMiddleware, (req, res, next) => {
+  const id = req.params.id
+  const user_id = req.user.id
+  query.getTodoById(id)
+    .then(authorizeTodo(user_id))
+    .then(() => query.deleteTodoById(id))
+    .then(() => {
+      res.end()
     })
+    .catch(next)
 })
 
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
     res.status(401).send({
       error: err.name,
+      message: err.message
+    })
+  } else if (err instanceof NotFoundError) {
+    res.status(404).send({
+      message: err.message
+    })
+  } else if (err instanceof ForbiddenError) {
+    res.status(403).send({
       message: err.message
     })
   }
