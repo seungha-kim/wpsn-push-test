@@ -36,6 +36,10 @@ module.exports = {
         }
         throw new Error('사용자 이름 혹은 비밀번호가 일치하지 않습니다.')
       })
-
+  },
+  getUserById(id) {
+    return knex('user')
+      .where({id})
+      .first()
   }
 }
