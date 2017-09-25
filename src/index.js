@@ -70,6 +70,19 @@ app.post('/todos', jwtMiddleware, (req, res) => {
     })
 })
 
+app.patch('/todos/:id', jwtMiddleware, (req, res) => {
+  const id = req.params.id
+  const title = req.body.title
+  const complete = req.body.complete
+  query.updateTodoById(id, {title, complete})
+    .then(id => {
+      return query.getTodoById(id)
+    })
+    .then(todo => {
+      res.send(todo)
+    })
+})
+
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
     res.status(401).send({
@@ -77,7 +90,7 @@ app.use(function (err, req, res, next) {
       message: err.message
     })
   }
-});
+})
 
 app.listen(3000, () => {
   console.log('listening...')
