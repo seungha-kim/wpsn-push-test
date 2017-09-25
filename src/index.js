@@ -2,12 +2,14 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const jwt = require('jsonwebtoken')
 const expressJwt = require('express-jwt')
+const cors = require('cors')
 
 const query = require('./query')
 
 const app = express()
 
 app.use(bodyParser.json())
+app.use(cors())
 
 const jwtMiddleware = expressJwt({secret: 'mysecret'})
 
@@ -44,6 +46,28 @@ app.post('/login', (req, res) => {
       })
     })
 
+})
+
+app.get('/todos', jwtMiddleware, (req, res) => {
+  const user_id = req.user.id
+  // userId가 소유하고 있는 할 일 목록을 불러와서 반환
+  query.getTodosByUserId(user_id)
+    .then(todos => {
+      res.send(todos)
+    })
+})
+
+app.post('/todos', jwtMiddleware, (req, res) => {
+  const user_id = req.user.id
+  const title = req.body.title
+  query.createTodo(user_id, title)
+    .then(([id]) => {
+      return query.getTodoById(id)
+    })
+    .then(todo => {
+      res.status(201)
+      res.send(todo)
+    })
 })
 
 app.use(function (err, req, res, next) {

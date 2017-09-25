@@ -41,5 +41,21 @@ module.exports = {
     return knex('user')
       .where({id})
       .first()
+  },
+  getTodosByUserId(user_id) {
+    return knex('todo')
+      .where({user_id})
+  },
+  createTodo(user_id, title) {
+    return knex('todo')
+      .insert({
+        user_id,
+        title
+      })
+  },
+  getTodoById(id) {
+    return knex('todo')
+      .where({id})
+      .first()
   }
 }
