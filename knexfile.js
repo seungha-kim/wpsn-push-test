@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('./env')
 
 const common = {
   client: 'mysql',
@@ -14,5 +14,6 @@ module.exports = {
   development: Object.assign({}, common, {
     debug: true
   }),
-  production: common
+  production: common,
+  test: common
 };
